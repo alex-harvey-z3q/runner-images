@@ -1,0 +1,52 @@
+# TEMPORARY FORK-ONLY AUTOMATION.
+#
+# This workflow keeps alex-harvey-z3q/codex/14564-windows-resolver-preflight
+# current with actions/runner-images main while PR #14565 is under review.
+# It is intentionally committed only to the fork's main branch, not to the PR
+# branch, and MUST NOT be merged into the upstream runner-images repository.
+
+name: Temporary sync upstream main into preflight PR
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-sync-preflight-pr
+  cancel-in-progress: false
+
+env:
+  TARGET_BRANCH: codex/14564-windows-resolver-preflight
+  UPSTREAM_REPOSITORY: actions/runner-images
+
+jobs:
+  sync:
+    # Keep this automation confined to its intended fork.
+    if: github.repository == 'alex-harvey-z3q/runner-images'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Merge upstream main when it has advanced
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch "https://github.com/${UPSTREAM_REPOSITORY}.git" main
+
+          if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+            echo 'The PR branch already contains upstream main.'
+            exit 0
+          fi
+
+          git merge --no-edit --no-ff FETCH_HEAD
+          git push origin "HEAD:refs/heads/${TARGET_BRANCH}"

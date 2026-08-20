@@ -34,6 +34,10 @@ jobs:
         with:
           ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
+          # GITHUB_TOKEN cannot push upstream workflow-file changes. This
+          # temporary, fork-only secret is an alex-harvey-z3q token with
+          # Contents and Workflows write access.
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
 
       - name: Merge upstream main when it has advanced
         shell: bash
